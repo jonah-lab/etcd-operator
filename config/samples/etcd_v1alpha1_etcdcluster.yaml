@@ -1,7 +1,8 @@
 apiVersion: etcd.jonah-lab.io/v1alpha1
 kind: EtcdCluster
 metadata:
-  name: etcdcluster-sample
+  name: demo
 spec:
   # Add fields here
-  foo: bar
+  size: 3
+  image: registry.aliyuncs.com/k8sxio/etcd:3.5.0-0
