@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
@@ -34,6 +35,7 @@ import (
 // EtcdClusterReconciler reconciles a EtcdCluster object
 type EtcdClusterReconciler struct {
 	client.Client
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
@@ -55,7 +57,8 @@ type EtcdClusterReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 
 func (r *EtcdClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	curLog := log.FromContext(ctx)
+	tapLog := curLog.WithValues("etcdCluster", req.NamespacedName)
 	var etcdCluster etcdv1alpha1.EtcdCluster
 	if err := r.Get(ctx, req.NamespacedName, &etcdCluster); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -70,12 +73,12 @@ func (r *EtcdClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	svc.Name = etcdCluster.Name
 	svc.Namespace = etcdCluster.Namespace
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		or, err := ctrl.CreateOrUpdate(ctx, r, &svc, func() error {
+		or, err := ctrl.CreateOrUpdate(ctx, r.Client, &svc, func() error {
 			// 调谐的函数必须在这里面实现，实际上就是去拼装我们的 Service
 			MutateHeadlessSvc(&etcdCluster, &svc)
 			return controllerutil.SetControllerReference(&etcdCluster, &svc, r.Scheme)
 		})
-		log.Log.Info("CreateOrUpdate Result", "Service", or)
+		tapLog.Info("CreateOrUpdate Result", "Service", or)
 		return err
 	}); err != nil {
 		return ctrl.Result{}, err
@@ -85,12 +88,12 @@ func (r *EtcdClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	sts.Name = etcdCluster.Name
 	sts.Namespace = etcdCluster.Namespace
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		or, err := ctrl.CreateOrUpdate(ctx, r, &sts, func() error {
+		or, err := ctrl.CreateOrUpdate(ctx, r.Client, &sts, func() error {
 			// 调谐的函数必须在这里面实现，实际上就是去拼装我们的 StatefulSet
 			MutateStatefulSet(&etcdCluster, &sts)
 			return controllerutil.SetControllerReference(&etcdCluster, &sts, r.Scheme)
 		})
-		log.Log.Info("CreateOrUpdate Result", "StatefulSet", or)
+		tapLog.Info("CreateOrUpdate Result", "StatefulSet", or)
 		return err
 	}); err != nil {
 		return ctrl.Result{}, err
@@ -102,7 +105,8 @@ func (r *EtcdClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *EtcdClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&etcdv1alpha1.EtcdCluster{}).
-		For(&corev1.Service{}).
-		For(&appsv1.StatefulSet{}).
+		//Owns(&corev1.Pod{}).
+		Owns(&corev1.Service{}).
+		Owns(&appsv1.StatefulSet{}).
 		Complete(r)
 }

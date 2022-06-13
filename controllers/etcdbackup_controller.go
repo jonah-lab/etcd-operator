@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	corev1 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,6 +32,17 @@ import (
 type EtcdBackupReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+}
+
+type backupState struct {
+	backup  *etcdv1alpha1.EtcdBackup // EtcdBackup 对象本身
+	actual  *backupStateContainer    // 真实的状态
+	desired *backupStateContainer    // 期望的状态
+}
+
+// backupStateContainer 包含 EtcdBackup 的状态
+type backupStateContainer struct {
+	pod *corev1.Pod
 }
 
 //+kubebuilder:rbac:groups=etcd.jonah-lab.io,resources=etcdbackups,verbs=get;list;watch;create;update;patch;delete
