@@ -6,8 +6,10 @@ spec:
   etcdUrl: <etcd-cluster-endpoints>  # 备份的节点 etcd 地址
   storageType: s3  # 指定备份类型
   s3:
-    path: "foo-bucket/snapshot.db"  # 数据存放目录
-    s3Secret: "secret"   # 包含 accessKeyID 与 secretAccessKey
+    path: "foo-bucket/{{ .NameSpace }}/{{ .Name }}/{{ .CreationTimeStamp }}/snapshot.db"  # 数据存放目录
+    endpoint: "play.min.io" # minio的地址
+    Secret: "minio-access-secret"   # 包含 accessKeyID 与 secretAccessKey
   oss:
     path: "foo-bucket/snapshot.db"
-    ossSecret: "secret"
+    Secret: "secret"
+# $ kubectl create secret generic minio-access-secret --from-literal=MINIO_ACCESS_KEY=Q3AM3UQ867SPQQA43P2F --from-literal=MINIO_SECRET_KEY=zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG

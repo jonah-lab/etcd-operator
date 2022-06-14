@@ -1,0 +1,41 @@
+package controllers
+
+import (
+	"context"
+	"fmt"
+	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+type Action interface {
+	Execute(ctx context.Context) error
+}
+
+type PatchStatus struct {
+	client   client.Client
+	original client.Object
+	new      client.Object
+}
+
+func (o *PatchStatus) Execute(ctx context.Context) error {
+	if reflect.DeepEqual(o.original, o.new) {
+		return nil
+	}
+	if err := o.client.Status().Patch(ctx, o.new, client.MergeFrom(o.original)); err != nil {
+		return fmt.Errorf("while patching status error %q", err)
+	}
+	return nil
+}
+
+// CreateObject 创建一个新的资源对象
+type CreateObject struct {
+	client client.Client
+	obj    client.Object
+}
+
+func (o *CreateObject) Execute(ctx context.Context) error {
+	if err := o.client.Create(ctx, o.obj); err != nil {
+		return fmt.Errorf("error %q while creating object ", err)
+	}
+	return nil
+}

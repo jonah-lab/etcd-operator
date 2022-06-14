@@ -20,6 +20,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type EtcdBackupPhase string
+
+var (
+	EtcdBackupPhaseBackingUp EtcdBackupPhase   = "BackingUp"
+	EtcdBackupPhaseCompleted EtcdBackupPhase   = "Completed"
+	EtcdBackupPhaseFailed    EtcdBackupPhase   = "Failed"
+	BackupStorageTypeS3      BackupStorageType = "s3"
+	BackupStorageTypeOSS     BackupStorageType = "oss"
+)
+
 type BackupStorageType string
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -60,7 +70,7 @@ type S3BackupSource struct {
 	// The secret must contain the following keys/fields:
 	//     accessKeyID
 	//     accessKeySecret
-	S3Secret string `json:"s3Secret"`
+	Secret string `json:"secret"`
 
 	// Endpoint if blank points to aws. If specified, can point to s3 compatible object
 	// stores.
@@ -92,7 +102,7 @@ type OSSBackupSource struct {
 	//     accessKeyID: <base64 of my-access-key-id>
 	//     accessKeySecret: <base64 of my-access-key-secret>
 	//
-	OSSSecret string `json:"ossSecret"`
+	Secret string `json:"secret"`
 
 	// Endpoint is the OSS service endpoint on alibaba cloud, defaults to
 	// "http://oss-cn-hangzhou.aliyuncs.com".
@@ -101,13 +111,6 @@ type OSSBackupSource struct {
 	//  https://www.alibabacloud.com/help/doc-detail/31837.htm
 	Endpoint string `json:"endpoint,omitempty"`
 }
-type EtcdBackupPhase string
-
-var (
-	EtcdBackupPhaseBackingUp EtcdBackupPhase = "BackingUp"
-	EtcdBackupPhaseCompleted EtcdBackupPhase = "Completed"
-	EtcdBackupPhaseFailed    EtcdBackupPhase = "Failed"
-)
 
 // EtcdBackupStatus defines the observed state of EtcdBackup
 type EtcdBackupStatus struct {
